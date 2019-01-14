@@ -2,15 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TCPSample : MonoBehaviour {
-
-	// Use this for initialization
-	void Start () {
+public class TCPSample : MonoBehaviour
+{
+	void Start ()
+    {
 		
 	}
-	
-	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
 		
 	}
 }

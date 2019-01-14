@@ -102,7 +102,7 @@ namespace Network.UDP
         {
             if (m_AcceptThread != null)
             {
-                m_AcceptThread.Join(500);
+                m_AcceptThread.Join(2000);
                 m_AcceptThread.Abort();
                 m_AcceptThread = null;
             }
@@ -177,7 +177,7 @@ namespace Network.UDP
         {
             if (m_SendThread != null)
             {
-                m_SendThread.Join(500);
+                m_SendThread.Join(2000);
                 m_SendThread.Abort();
                 m_SendThread = null;
             }

@@ -1,8 +1,9 @@
 ﻿using Network.UDP;
+using Network.Core;
 using System.Text;
 using UnityEngine;
 
-public class UDPSample : MonoBehaviour
+public class UDPEchoSample : MonoBehaviour
 {
     private UDPListener m_ServerSession = new UDPListener();
     private UDPUser m_ClientSession = new UDPUser();
@@ -12,7 +13,7 @@ public class UDPSample : MonoBehaviour
         {
             m_ServerSession.SetDataHandler((data, addr) =>
             {
-                Debug.Log("<color=green>Hello, User from " + addr.ToString() + "</color>");
+                ColoredLogger.Log("Hello, User from " + addr.ToString(), ColoredLogger.LogColor.Green);
             });
             m_ServerSession.Start();
         }
@@ -21,7 +22,7 @@ public class UDPSample : MonoBehaviour
             m_ClientSession.SetEchoHandler(delegate ()
             {
                 string msg = "Hello, Server";
-                Debug.Log("<color=yellow>" + msg + "</color>");
+                ColoredLogger.Log(msg, ColoredLogger.LogColor.Yellow);
                 return Encoding.ASCII.GetBytes(msg);
             });
             m_ClientSession.Start();
@@ -29,10 +30,10 @@ public class UDPSample : MonoBehaviour
     }
     private void OnApplicationQuit()
     {
-        if(m_ClientSession != null)
+        if(m_ServerSession != null)
         {
-            m_ClientSession.Close();
-            m_ClientSession = null;
+            m_ServerSession.Close();
+            m_ServerSession = null;
         }
         if (m_ClientSession != null)
         {
