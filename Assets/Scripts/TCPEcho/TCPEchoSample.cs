@@ -24,7 +24,7 @@ public class TCPEchoSample : MonoBehaviour
                     if(endOfMsgPos >= 0)
                     {
                         string helloMsg = m_PendingMsg.Substring(0, endOfMsgPos + 1);
-                        ColoredLogger.Log(helloMsg, ColoredLogger.LogColor.Green);
+                        ColoredLogger.Log("Msg From User: [" + helloMsg + "]", ColoredLogger.LogColor.Green);
                         m_PendingMsg = m_PendingMsg.Substring(endOfMsgPos+1);
                     }
                     else
