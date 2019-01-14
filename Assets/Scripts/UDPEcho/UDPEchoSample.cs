@@ -21,7 +21,7 @@ public class UDPEchoSample : MonoBehaviour
         {
             m_ClientSession.SetEchoHandler(delegate ()
             {
-                string msg = "Hello, Server";
+                string msg = "Hello, Server!";
                 ColoredLogger.Log(msg, ColoredLogger.LogColor.Yellow);
                 return Encoding.ASCII.GetBytes(msg);
             });

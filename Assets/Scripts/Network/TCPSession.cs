@@ -1,42 +1,32 @@
-using Network.Core;
+﻿using Network.Core;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using UnityEngine;
 
-namespace Network.UDP
+namespace Network.TCP
 {
-    public abstract class UDPSession : NetworkSession
+    public class TCPSession : NetworkSession
     {
-        protected UdpClient m_Socket;
-        protected override void OnClose()
-        {
-            base.OnClose();
-            if (m_Socket != null)
-            {
-                m_Socket.Close();
-                m_Socket = null;
-            }
-        }
     }
-    public class UDPListener : UDPSession
+    public class TCPServer : TCPSession
     {
+        private TcpListener m_Listener;
         private Thread m_AcceptThread;
-        private Action<byte[], IPEndPoint> m_DataHandler;
-        public UDPListener()
+        private Action<byte[], int> m_DataHandler;
+        public TCPServer()
         {
             m_SessionType = ESessionType.Server;
-        }
-        public void SetDataHandler(Action<byte[], IPEndPoint> action)
-        {
-            m_DataHandler = action;
         }
         protected override bool OnInit(string addr, int port)
         {
             try
             {
-                m_Socket = new UdpClient(port);
+                m_Listener = new TcpListener(m_Addr);
                 return true;
             }
             catch (Exception e)
@@ -48,7 +38,12 @@ namespace Network.UDP
         protected override void OnStart()
         {
             base.OnStart();
+            m_Listener.Start();
             m_AcceptThread = CreateThread(AcceptThreadFunc);
+        }
+        public void SetDataHandler(Action<byte[], int> action)
+        {
+            m_DataHandler = action;
         }
         protected override void OnClose()
         {
@@ -58,11 +53,15 @@ namespace Network.UDP
                 m_AcceptThread.Abort();
                 m_AcceptThread = null;
             }
+            if (m_Listener != null)
+            {
+                m_Listener.Stop();
+                m_Listener = null;
+            }
             base.OnClose();
         }
         private void AcceptThreadFunc()
         {
-            IPEndPoint remoteIPEndPoint = new IPEndPoint(IPAddress.Any, 0);
             while (true)
             {
                 if (IsClosed())
@@ -71,14 +70,31 @@ namespace Network.UDP
                 }
                 try
                 {
-                    if (m_Socket != null && m_Socket.Available > 0)
+                    if(m_Listener.Pending())
                     {
-                        byte[] data = m_Socket.Receive(ref remoteIPEndPoint);
-                        if (data != null && data.Length > 0)
+                        TcpClient client = m_Listener.AcceptTcpClient();
+                        int bytesRead = 0;
+                        using (NetworkStream stream = client.GetStream())
                         {
-                            if(m_DataHandler != null)
+                            byte[] chunks = new byte[10];
+                            while (true)
                             {
-                                m_DataHandler.Invoke(data, remoteIPEndPoint);
+                                if (IsClosed() || client.Connected == false)
+                                {
+                                    return;
+                                }
+                                if (stream.DataAvailable)
+                                {
+                                    bytesRead = stream.Read(chunks, 0, chunks.Length);
+                                    if(bytesRead > 0 && m_DataHandler != null)
+                                    {
+                                        m_DataHandler.Invoke(chunks, bytesRead);
+                                    }
+                                }
+                                else
+                                {
+                                    Thread.Sleep(50);
+                                }
                             }
                         }
                     }
@@ -95,25 +111,24 @@ namespace Network.UDP
             }
         }
     }
-    public class UDPUser : UDPSession
+    public class TCPUser : TCPSession
     {
         public delegate byte[] EchoHandler();
 
+        private TcpClient m_Client;
         private Thread m_SendThread;
         private EchoHandler m_EchoHandler;
-        public UDPUser()
+
+        public TCPUser()
         {
             m_SessionType = ESessionType.User;
-        }
-        public void SetEchoHandler(EchoHandler action)
-        {
-            m_EchoHandler = action;
         }
         protected override bool OnInit(string addr, int port)
         {
             try
             {
-                m_Socket = new UdpClient();
+                m_Client = new TcpClient();
+                m_Client.Connect(m_Addr);
                 return true;
             }
             catch (Exception e)
@@ -127,6 +142,10 @@ namespace Network.UDP
             base.OnStart();
             m_SendThread = CreateThread(SendThreadFunc);
         }
+        public void SetEchoHandler(EchoHandler action)
+        {
+            m_EchoHandler = action;
+        }
         protected override void OnClose()
         {
             if (m_SendThread != null)
@@ -135,28 +154,34 @@ namespace Network.UDP
                 m_SendThread.Abort();
                 m_SendThread = null;
             }
+            if (m_Client != null)
+            {
+                m_Client.Close();
+                m_Client = null;
+            }
             base.OnClose();
         }
         private void SendThreadFunc()
         {
+            NetworkStream ns = m_Client.GetStream();
             while (true)
             {
-                if (IsClosed())
+                if (IsClosed() || m_Client.Connected == false)
                 {
                     return;
                 }
                 try
                 {
                     byte[] data = null;
-                    if(m_EchoHandler != null)
+                    if (m_EchoHandler != null)
                     {
                         data = m_EchoHandler.Invoke();
                     }
-                    if(data != null && data.Length > 0)
+                    if (data != null && data.Length > 0)
                     {
-                        m_Socket.Send(data, data.Length, m_Addr);
+                        ns.Write(data, 0, data.Length);
                     }
-                    Thread.Sleep(1000);
+                    Thread.Sleep(10);
                 }
                 catch (Exception e)
                 {
@@ -165,5 +190,5 @@ namespace Network.UDP
                 }
             }
         }
-    }
+   }
 }
