@@ -9,10 +9,7 @@ public class HTTPSample : MonoBehaviour
     private List<HTTPRequest> m_PendingRequests = new List<HTTPRequest>();
     private void Start()
     {
-        for(int i = 0; i < 10; i++)
-        {
-            TestGet(i);
-        }
+        TestGet();
         TestPost();
     }
     private void Update()
@@ -22,7 +19,7 @@ public class HTTPSample : MonoBehaviour
             m_PendingRequests[i].CheckPendingRequest();
         }
     }
-    private void TestGet(int index)
+    private void TestGet()
     {
         var request = new HTTPRequest();
         request.Get("http://httpbin.org/", "get", (result, data) =>
@@ -36,12 +33,40 @@ public class HTTPSample : MonoBehaviour
                 ColoredLogger.Log("Request failed: " + request.LastError, ColoredLogger.LogColor.Red);
             }
             m_PendingRequests.Remove(request);
-        }, "name", "Reqeust" + index, "index", index);
+        }, "name", "Hello", "age", 1);
         //add to pending list
         m_PendingRequests.Add(request);
     }
+    class Person
+    {
+        public string name;
+        public int age;
+    }
     private void TestPost()
     {
+        var jsonData = new Person()
+        {
+            name = "Hello",
+            age = 1,
+        };
+        Dictionary<string, string> header = new Dictionary<string, string>();
+        header["Content-Type"] = "application/json";
+        var postData = Encoding.UTF8.GetBytes(JsonUtility.ToJson(jsonData));
 
+        var request = new HTTPRequest();
+        request.Post("http://httpbin.org/", "post", (result, data) =>
+        {
+            if (result == true)
+            {
+                ColoredLogger.Log(Encoding.ASCII.GetString(data), ColoredLogger.LogColor.Green);
+            }
+            else
+            {
+                ColoredLogger.Log("Request failed: " + request.LastError, ColoredLogger.LogColor.Red);
+            }
+            m_PendingRequests.Remove(request);
+        }, postData, header);
+        //add to pending list
+        m_PendingRequests.Add(request);
     }
 }

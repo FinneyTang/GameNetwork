@@ -1,13 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Network.HTTP
 {
     class HTTPRequest
     {
-        private UnityWebRequest m_Request;
-        private UnityWebRequestAsyncOperation m_AsyncOp;
+        private WWW m_Request;
         private Action<bool, byte[]> m_RequestFinishedAction;
         private string m_LastError = string.Empty;
         public string LastError
@@ -21,6 +20,7 @@ namespace Network.HTTP
         {
             if (args.Length % 2 != 0)
             {
+                m_LastError = "invalid arguments";
                 onRequestFinished.Invoke(false, null);
                 return;
             }
@@ -39,21 +39,29 @@ namespace Network.HTTP
                 paramStr += (args[i * 2].ToString() + "=" + Uri.EscapeDataString(args[i * 2 + 1].ToString()));
             }
             string url = Uri.EscapeUriString(addr) + cmd + paramStr;
-            m_Request = UnityWebRequest.Get(url);
             m_RequestFinishedAction = onRequestFinished;
-            m_AsyncOp = m_Request.SendWebRequest();
+            m_Request = new WWW(url);
+        }
+        public void Post(string addr, string cmd, Action<bool, byte[]> onRequestFinished, byte[] data, Dictionary<string, string> header)
+        {
+            string url = Uri.EscapeUriString(addr) + cmd;
+            m_RequestFinishedAction = onRequestFinished;
+            if(data != null && data.Length == 0)
+            {
+                data = null;
+            }
+            m_Request = new WWW(url, data, header);
         }
         public void CheckPendingRequest()
         {
-            if(m_AsyncOp == null)
+            if(m_Request == null)
             {
                 return;
             }
-            if(m_AsyncOp.isDone)
+            if(m_Request.isDone)
             {
-                bool hasError = m_Request.isNetworkError || m_Request.isHttpError;
                 m_LastError = m_Request.error;
-                m_RequestFinishedAction.Invoke(!hasError, m_Request.downloadHandler.data);
+                m_RequestFinishedAction.Invoke(string.IsNullOrEmpty(m_LastError), m_Request.bytes);
                 Dispose();
             }
         }
@@ -61,7 +69,6 @@ namespace Network.HTTP
         {
             m_Request.Dispose();
             m_RequestFinishedAction = null;
-            m_AsyncOp = null;
         }
     }
 }
