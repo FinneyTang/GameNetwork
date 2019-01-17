@@ -1,6 +1,4 @@
 ﻿using Network.UDP;
-using Network.Core;
-using System.Text;
 using UnityEngine;
 
 public class UDPEchoSample : MonoBehaviour
@@ -11,24 +9,22 @@ public class UDPEchoSample : MonoBehaviour
     {
         if (m_ServerSession.Init("127.0.0.1", 30000))
         {
-            m_ServerSession.SetDataHandler((data, addr) =>
-            {
-                ColoredLogger.Log("Hello, User from " + addr.ToString(), ColoredLogger.LogColor.Green);
-            });
             m_ServerSession.Start();
         }
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
-            m_ClientSession.SetEchoHandler(delegate ()
-            {
-                string msg = "Hello, Server!";
-                ColoredLogger.Log(msg, ColoredLogger.LogColor.Yellow);
-                return Encoding.ASCII.GetBytes(msg);
-            });
             m_ClientSession.Start();
         }
     }
-    private void OnApplicationQuit()
+    void OnGUI()
+    {
+        int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
+        if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Say Hello"))
+        {
+            m_ClientSession.Send("Hello Server!");
+        }
+    }
+    void OnApplicationQuit()
     {
         if(m_ServerSession != null)
         {

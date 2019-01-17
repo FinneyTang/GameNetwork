@@ -24,7 +24,7 @@ public class TCPEchoSample : MonoBehaviour
                     if(endOfMsgPos >= 0)
                     {
                         string helloMsg = m_PendingMsg.Substring(0, endOfMsgPos + 1);
-                        ColoredLogger.Log("Msg From User: [" + helloMsg + "]", ColoredLogger.LogColor.Green);
+                        ColoredLogger.Log("Msg From User: [" + helloMsg + "]", ColoredLogger.LogColor.Yellow);
                         m_PendingMsg = m_PendingMsg.Substring(endOfMsgPos+1);
                     }
                     else
@@ -41,13 +41,13 @@ public class TCPEchoSample : MonoBehaviour
             m_ClientSession.SetEchoHandler(delegate ()
             {
                 string msg = "Hello, Server!";
-                ColoredLogger.Log(msg, ColoredLogger.LogColor.Yellow);
+                ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
                 return Encoding.ASCII.GetBytes(msg);
             });
             m_ClientSession.Start();
         }
     }
-    private void OnApplicationQuit()
+    void OnApplicationQuit()
     {
         if (m_ServerSession != null)
         {

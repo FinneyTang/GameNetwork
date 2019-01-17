@@ -1,7 +1,9 @@
 using Network.Core;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using UnityEngine;
 
@@ -23,14 +25,9 @@ namespace Network.UDP
     public class UDPListener : UDPSession
     {
         private Thread m_AcceptThread;
-        private Action<byte[], IPEndPoint> m_DataHandler;
         public UDPListener()
         {
             m_SessionType = ESessionType.Server;
-        }
-        public void SetDataHandler(Action<byte[], IPEndPoint> action)
-        {
-            m_DataHandler = action;
         }
         protected override bool OnInit(string addr, int port)
         {
@@ -76,10 +73,8 @@ namespace Network.UDP
                         byte[] data = m_Socket.Receive(ref remoteIPEndPoint);
                         if (data != null && data.Length > 0)
                         {
-                            if(m_DataHandler != null)
-                            {
-                                m_DataHandler.Invoke(data, remoteIPEndPoint);
-                            }
+                            ColoredLogger.Log(
+                                "Msg From User: [" + Encoding.ASCII.GetString(data) + "]", ColoredLogger.LogColor.Yellow);
                         }
                     }
                     else
@@ -97,17 +92,12 @@ namespace Network.UDP
     }
     public class UDPUser : UDPSession
     {
-        public delegate byte[] EchoHandler();
-
         private Thread m_SendThread;
-        private EchoHandler m_EchoHandler;
+        protected AutoResetEvent m_SendDataSignal;
+        private Queue<string> m_PendingSendData;
         public UDPUser()
         {
             m_SessionType = ESessionType.User;
-        }
-        public void SetEchoHandler(EchoHandler action)
-        {
-            m_EchoHandler = action;
         }
         protected override bool OnInit(string addr, int port)
         {
@@ -122,16 +112,27 @@ namespace Network.UDP
             }
             return false;
         }
+        public void Send(string msg)
+        {
+            lock(m_PendingSendData)
+            {
+                m_PendingSendData.Enqueue(msg);
+                m_SendDataSignal.Set();
+            }
+        }
         protected override void OnStart()
         {
             base.OnStart();
+            m_SendDataSignal = new AutoResetEvent(false);
+            m_PendingSendData = new Queue<string>();
             m_SendThread = CreateThread(SendThreadFunc);
         }
         protected override void OnClose()
         {
+            m_SendDataSignal.Set();
             if (m_SendThread != null)
             {
-                m_SendThread.Join(2000);
+                m_SendThread.Join(1000);
                 m_SendThread.Abort();
                 m_SendThread = null;
             }
@@ -139,24 +140,33 @@ namespace Network.UDP
         }
         private void SendThreadFunc()
         {
+            Queue<string> dataToSend = new Queue<string>();
             while (true)
             {
                 if (IsClosed())
                 {
                     return;
                 }
+                m_SendDataSignal.WaitOne();
                 try
                 {
-                    byte[] data = null;
-                    if(m_EchoHandler != null)
+                    lock (m_PendingSendData)
                     {
-                        data = m_EchoHandler.Invoke();
+                        while (m_PendingSendData.Count != 0)
+                        {
+                            var packet = m_PendingSendData.Dequeue();
+                            dataToSend.Enqueue(packet);
+                        }
                     }
-                    if(data != null && data.Length > 0)
+                    while (dataToSend.Count != 0)
                     {
-                        m_Socket.Send(data, data.Length, m_Addr);
+                        string msg = dataToSend.Dequeue();
+                        byte[] data = Encoding.ASCII.GetBytes(msg);
+                        if (data != null && data.Length > 0)
+                        {
+                            m_Socket.Send(data, data.Length, m_Addr);
+                        }
                     }
-                    Thread.Sleep(1000);
                 }
                 catch (Exception e)
                 {
