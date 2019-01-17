@@ -6,8 +6,13 @@ namespace Network.HTTP
 {
     class HTTPRequest
     {
+        const string ERR_InvalidArguments = "invalid arguments";
+        const string ERR_Timeout = "timeout";
+        const float DEFAULT_TIMEOUT = 5;
+
         private WWW m_Request;
         private Action<bool, byte[]> m_RequestFinishedAction;
+        private float m_Timeout;
         private string m_LastError = string.Empty;
         public string LastError
         {
@@ -20,7 +25,7 @@ namespace Network.HTTP
         {
             if (args.Length % 2 != 0)
             {
-                m_LastError = "invalid arguments";
+                m_LastError = ERR_InvalidArguments;
                 onRequestFinished.Invoke(false, null);
                 return;
             }
@@ -40,6 +45,7 @@ namespace Network.HTTP
             }
             string url = Uri.EscapeUriString(addr) + cmd + paramStr;
             m_RequestFinishedAction = onRequestFinished;
+            m_Timeout = Time.time + DEFAULT_TIMEOUT;
             m_Request = new WWW(url);
         }
         public void Post(string addr, string cmd, Action<bool, byte[]> onRequestFinished, byte[] data, Dictionary<string, string> header)
@@ -50,6 +56,7 @@ namespace Network.HTTP
             {
                 data = null;
             }
+            m_Timeout = Time.time + DEFAULT_TIMEOUT;
             m_Request = new WWW(url, data, header);
         }
         public void CheckPendingRequest()
@@ -63,6 +70,15 @@ namespace Network.HTTP
                 m_LastError = m_Request.error;
                 m_RequestFinishedAction.Invoke(string.IsNullOrEmpty(m_LastError), m_Request.bytes);
                 Dispose();
+            }
+            else
+            {
+                if(Time.time > m_Timeout)
+                {
+                    m_LastError = ERR_Timeout;
+                    m_RequestFinishedAction.Invoke(false, null);
+                    Dispose();
+                }
             }
         }
         private void Dispose()

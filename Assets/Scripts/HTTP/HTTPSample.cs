@@ -11,6 +11,7 @@ public class HTTPSample : MonoBehaviour
     {
         TestGet();
         TestPost();
+        TestGetTimeout();
     }
     private void Update()
     {
@@ -66,6 +67,20 @@ public class HTTPSample : MonoBehaviour
             }
             m_PendingRequests.Remove(request);
         }, postData, header);
+        //add to pending list
+        m_PendingRequests.Add(request);
+    }
+    private void TestGetTimeout()
+    {
+        var request = new HTTPRequest();
+        request.Get("http://111.111.111.111/", "get", (result, data) =>
+        {
+            if (result == false)
+            {
+                ColoredLogger.Log("Request failed: " + request.LastError, ColoredLogger.LogColor.Red);
+            }
+            m_PendingRequests.Remove(request);
+        });
         //add to pending list
         m_PendingRequests.Add(request);
     }
