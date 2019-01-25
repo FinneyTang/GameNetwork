@@ -44,6 +44,6 @@ public class HTTPImageSample : MonoBehaviour
             progress = m_Request.Progress * 100;
         }
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
-        GUI.Label(new Rect(margin, margin, Screen.width - 2 * margin, margin), progress.ToString("f1") + "%");
+        GUI.Label(new Rect(margin, margin, Screen.width - 2 * margin, 20), progress.ToString("f1") + "%");
     }
 }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using UnityEngine;
 
@@ -12,52 +11,65 @@ namespace Network.UDP
     public abstract class UDPSession : NetworkSession
     {
         protected UdpClient m_Socket;
+        protected Thread m_RecieveThread;
+        protected Thread m_SendThread;
+
+        protected AutoResetEvent m_SendDataSignal;
+        protected Queue<byte[]> m_PendingSendData;
+
+        protected Queue<byte[]> m_RecvedData;
+        protected override void OnStart()
+        {
+            base.OnStart();
+            m_SendDataSignal = new AutoResetEvent(false);
+            m_PendingSendData = new Queue<byte[]>();
+            m_RecvedData = new Queue<byte[]>();
+            m_RecieveThread = CreateThread(RecieveThreadFunc);
+            m_SendThread = CreateThread(SendThreadFunc);
+        }
         protected override void OnClose()
         {
             base.OnClose();
+            if (m_RecieveThread != null)
+            {
+                m_RecieveThread.Join(500);
+                m_RecieveThread.Abort();
+                m_RecieveThread = null;
+            }
+            m_SendDataSignal.Set();
+            if (m_SendThread != null)
+            {
+                m_SendThread.Join(500);
+                m_SendThread.Abort();
+                m_SendThread = null;
+            }
             if (m_Socket != null)
             {
                 m_Socket.Close();
                 m_Socket = null;
             }
         }
-    }
-    public class UDPListener : UDPSession
-    {
-        private Thread m_AcceptThread;
-        public UDPListener()
+        public void Send(byte[] msg)
         {
-            m_SessionType = ESessionType.Server;
-        }
-        protected override bool OnInit(string addr, int port)
-        {
-            try
+            lock (m_PendingSendData)
             {
-                m_Socket = new UdpClient(port);
-                return true;
+                m_PendingSendData.Enqueue(msg);
+                m_SendDataSignal.Set();
             }
-            catch (Exception e)
-            {
-                Debug.LogError("AsServer error: " + e.ToString());
-            }
-            return false;
         }
-        protected override void OnStart()
+        public bool GetRecvedData(Queue<byte[]> output)
         {
-            base.OnStart();
-            m_AcceptThread = CreateThread(AcceptThreadFunc);
-        }
-        protected override void OnClose()
-        {
-            if (m_AcceptThread != null)
+            lock(m_RecvedData)
             {
-                m_AcceptThread.Join(2000);
-                m_AcceptThread.Abort();
-                m_AcceptThread = null;
+                while (m_RecvedData.Count != 0)
+                {
+                    var data = m_RecvedData.Dequeue();
+                    output.Enqueue(data);
+                }
             }
-            base.OnClose();
+            return output.Count > 0;
         }
-        private void AcceptThreadFunc()
+        private void RecieveThreadFunc()
         {
             IPEndPoint remoteIPEndPoint = new IPEndPoint(IPAddress.Any, 0);
             while (true)
@@ -68,19 +80,34 @@ namespace Network.UDP
                 }
                 try
                 {
-                    if (m_Socket != null && m_Socket.Available > 0)
+                    while(m_Socket != null && m_Socket.Available > 0)
                     {
+                        if (IsClosed())
+                        {
+                            return;
+                        }
                         byte[] data = m_Socket.Receive(ref remoteIPEndPoint);
                         if (data != null && data.Length > 0)
                         {
-                            ColoredLogger.Log(
-                                "Msg From User: [" + Encoding.ASCII.GetString(data) + "]", ColoredLogger.LogColor.Yellow);
+                            if (IsServer())
+                            {
+                                m_Addr = remoteIPEndPoint;
+                            }
+                            lock (m_RecvedData)
+                            {
+                                m_RecvedData.Enqueue(data);
+                            }
                         }
                     }
-                    else
+                    do
                     {
+                        if (IsClosed())
+                        {
+                            return;
+                        }
                         Thread.Sleep(10);
                     }
+                    while (m_Socket == null || m_Socket.Available <= 0);
                 }
                 catch (Exception e)
                 {
@@ -89,58 +116,9 @@ namespace Network.UDP
                 }
             }
         }
-    }
-    public class UDPUser : UDPSession
-    {
-        private Thread m_SendThread;
-        protected AutoResetEvent m_SendDataSignal;
-        private Queue<string> m_PendingSendData;
-        public UDPUser()
-        {
-            m_SessionType = ESessionType.User;
-        }
-        protected override bool OnInit(string addr, int port)
-        {
-            try
-            {
-                m_Socket = new UdpClient();
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("AsClient error: " + e.ToString());
-            }
-            return false;
-        }
-        public void Send(string msg)
-        {
-            lock(m_PendingSendData)
-            {
-                m_PendingSendData.Enqueue(msg);
-                m_SendDataSignal.Set();
-            }
-        }
-        protected override void OnStart()
-        {
-            base.OnStart();
-            m_SendDataSignal = new AutoResetEvent(false);
-            m_PendingSendData = new Queue<string>();
-            m_SendThread = CreateThread(SendThreadFunc);
-        }
-        protected override void OnClose()
-        {
-            m_SendDataSignal.Set();
-            if (m_SendThread != null)
-            {
-                m_SendThread.Join(1000);
-                m_SendThread.Abort();
-                m_SendThread = null;
-            }
-            base.OnClose();
-        }
         private void SendThreadFunc()
         {
-            Queue<string> dataToSend = new Queue<string>();
+            Queue<byte[]> dataToSend = new Queue<byte[]>();
             while (true)
             {
                 if (IsClosed())
@@ -160,8 +138,7 @@ namespace Network.UDP
                     }
                     while (dataToSend.Count != 0)
                     {
-                        string msg = dataToSend.Dequeue();
-                        byte[] data = Encoding.ASCII.GetBytes(msg);
+                        byte[] data = dataToSend.Dequeue();
                         if (data != null && data.Length > 0)
                         {
                             m_Socket.Send(data, data.Length, m_Addr);
@@ -174,6 +151,46 @@ namespace Network.UDP
                     return;
                 }
             }
+        }
+    }
+    public class UDPListener : UDPSession
+    {
+        public UDPListener()
+        {
+            m_SessionType = ESessionType.Server;
+        }
+        protected override bool OnInit(string addr, int port)
+        {
+            try
+            {
+                m_Socket = new UdpClient(port);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("AsServer error: " + e.ToString());
+            }
+            return false;
+        }
+    }
+    public class UDPUser : UDPSession
+    {
+        public UDPUser()
+        {
+            m_SessionType = ESessionType.User;
+        }
+        protected override bool OnInit(string addr, int port)
+        {
+            try
+            {
+                m_Socket = new UdpClient();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("AsClient error: " + e.ToString());
+            }
+            return false;
         }
     }
 }
