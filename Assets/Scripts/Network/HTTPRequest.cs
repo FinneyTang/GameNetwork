@@ -14,11 +14,23 @@ namespace Network.HTTP
         private Action<bool, byte[]> m_RequestFinishedAction;
         private float m_Timeout;
         private string m_LastError = string.Empty;
+        private float m_LastProgress = 0f;
         public string LastError
         {
             get
             {
                 return m_LastError;
+            }
+        }
+        public float Progress
+        {
+            get
+            {
+                if (m_Request != null)
+                {
+                    return m_Request.progress;
+                }
+                return 0f;
             }
         }
         public void Get(string addr, string cmd, Action<bool, byte[]> onRequestFinished, params object[] args)
@@ -73,6 +85,11 @@ namespace Network.HTTP
             }
             else
             {
+                if(m_Request.progress > m_LastProgress)
+                {
+                    m_Timeout = Time.time + DEFAULT_TIMEOUT;
+                    m_LastProgress = m_Request.progress;
+                }
                 if(Time.time > m_Timeout)
                 {
                     m_LastError = ERR_Timeout;
@@ -84,6 +101,7 @@ namespace Network.HTTP
         private void Dispose()
         {
             m_Request.Dispose();
+            m_Request = null;
             m_RequestFinishedAction = null;
         }
     }
