@@ -1,6 +1,7 @@
 ﻿using Network.Core;
 using Network.UDP;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UnityEngine;
 
@@ -19,13 +20,38 @@ public class MsgSample : MonoBehaviour
 
         public override byte[] Serialize()
         {
-            return null;
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(PlayerID);
+            writer.Write(TargetPosition.x);
+            writer.Write(TargetPosition.y);
+            writer.Write(TargetPosition.z);
+            writer.Write(Speed);
+            return stream.ToArray();
         }
         public override void Unserialize(byte[] data)
         {
-
+            MemoryStream stream = new MemoryStream(data);
+            BinaryReader reader = new BinaryReader(stream);
+            PlayerID = reader.ReadInt32();
+            TargetPosition.x = reader.ReadSingle();
+            TargetPosition.y = reader.ReadSingle();
+            TargetPosition.z = reader.ReadSingle();
+            Speed = reader.ReadSingle();
         }
     }
+    private readonly byte[] KEY = new byte[]{ 0x36, 0x7F, 0x45 };
+    private byte[] XOR(byte[] data, byte[] key)
+    {
+        int keyIndex = 0;
+        for(int i = 0; i < data.Length; i++)
+        {
+            data[i] ^= key[keyIndex];
+            keyIndex = (keyIndex + 1) % key.Length;
+        }
+        return data;
+    }
+
 
     private UDPListener m_ServerSession = new UDPListener();
     private UDPUser m_ClientSession = new UDPUser();
@@ -47,17 +73,27 @@ public class MsgSample : MonoBehaviour
         {
             while (m_RecvedData.Count != 0)
             {
-                var data = m_RecvedData.Dequeue();
-                ColoredLogger.Log("Msg From User: [" + Encoding.ASCII.GetString(data) + "]", ColoredLogger.LogColor.Yellow);
+                var data = XOR(m_RecvedData.Dequeue(), KEY);
+                MoveToMsg msg = new MoveToMsg();
+                msg.Unserialize(data);
+                ColoredLogger.Log(
+                    "Msg From User: [" + 
+                    string.Format("PlayerID={0},TargetPosition={1},Speed={2}", msg.PlayerID, msg.TargetPosition.ToString(), msg.Speed) + 
+                    "]", ColoredLogger.LogColor.Yellow);
             }
         }
     }
     void OnGUI()
     {
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
-        if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Say Hello"))
+        if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Send MoveToMsg"))
         {
-            m_ClientSession.Send(Encoding.ASCII.GetBytes("Hello Server!"));
+            MoveToMsg msg = new MoveToMsg();
+            msg.PlayerID = 1;
+            msg.TargetPosition = new Vector3(-1f, 2f, 3.5f);
+            msg.Speed = 2f;
+            byte[] data = XOR(msg.Serialize(), KEY);
+            m_ClientSession.Send(data);
         }
     }
     void OnApplicationQuit()
