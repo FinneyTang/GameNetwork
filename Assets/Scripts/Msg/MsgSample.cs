@@ -54,7 +54,7 @@ public class MsgSample : MonoBehaviour
 
 
     private UDPListener m_ServerSession = new UDPListener();
-    private UDPUser m_ClientSession = new UDPUser();
+    private UDPClient m_ClientSession = new UDPClient();
     private Queue<byte[]> m_RecvedData = new Queue<byte[]>();
     void Start()
     {

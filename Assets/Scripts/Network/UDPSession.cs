@@ -173,9 +173,9 @@ namespace Network.UDP
             return false;
         }
     }
-    public class UDPUser : UDPSession
+    public class UDPClient : UDPSession
     {
-        public UDPUser()
+        public UDPClient()
         {
             m_SessionType = ESessionType.User;
         }

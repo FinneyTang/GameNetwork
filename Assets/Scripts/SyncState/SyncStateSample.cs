@@ -10,7 +10,7 @@ public class SyncStateSample : MonoBehaviour
 
     private UDPListener m_ServerSession = new UDPListener();
     private Queue<byte[]> m_ServerRecvedData = new Queue<byte[]>();
-    private UDPUser m_ClientSession = new UDPUser();
+    private UDPClient m_ClientSession = new UDPClient();
     private Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
     void Start()
     {

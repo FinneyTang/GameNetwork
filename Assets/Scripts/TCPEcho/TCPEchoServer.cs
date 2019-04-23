@@ -4,12 +4,10 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-public class TCPEchoSample : MonoBehaviour
+public class TCPEchoServer : MonoBehaviour
 {
     private TCPServer m_ServerSession = new TCPServer();
     private string m_PendingMsg = string.Empty;
-
-    private TCPUser m_ClientSession = new TCPUser();
     void Start ()
     {
         if (m_ServerSession.Init("127.0.0.1", 30000))
@@ -32,19 +30,9 @@ public class TCPEchoSample : MonoBehaviour
                         break;
                     }
                 }
-                //ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
+                ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
             });
             m_ServerSession.Start();
-        }
-        if (m_ClientSession.Init("127.0.0.1", 30000))
-        {
-            m_ClientSession.SetEchoHandler(delegate ()
-            {
-                string msg = "Hello, Server!";
-                ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
-                return Encoding.ASCII.GetBytes(msg);
-            });
-            m_ClientSession.Start();
         }
     }
     void OnApplicationQuit()
@@ -53,11 +41,6 @@ public class TCPEchoSample : MonoBehaviour
         {
             m_ServerSession.Close();
             m_ServerSession = null;
-        }
-        if (m_ClientSession != null)
-        {
-            m_ClientSession.Close();
-            m_ClientSession = null;
         }
     }
 }

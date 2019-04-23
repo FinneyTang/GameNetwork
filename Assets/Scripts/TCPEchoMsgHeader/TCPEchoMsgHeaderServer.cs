@@ -1,16 +1,13 @@
 ﻿using Network.Core;
 using Network.TCP;
 using System.IO;
-using System.Net;
 using System.Text;
 using UnityEngine;
 
-public class TCPEchoMsgHeaderSample : MonoBehaviour
+public class TCPEchoMsgHeaderServer : MonoBehaviour
 {
     private TCPServer m_ServerSession = new TCPServer();
     private MemoryStream m_PendingStream = new MemoryStream();
-
-    private TCPUser m_ClientSession = new TCPUser();
     void Start ()
     {
         if (m_ServerSession.Init("127.0.0.1", 30000))
@@ -56,21 +53,6 @@ public class TCPEchoMsgHeaderSample : MonoBehaviour
             });
             m_ServerSession.Start();
         }
-        if (m_ClientSession.Init("127.0.0.1", 30000))
-        {
-            m_ClientSession.SetEchoHandler(delegate ()
-            {
-                string msg = "Hello, Server!";
-                MemoryStream stream = new MemoryStream();
-                BinaryWriter writer = new BinaryWriter(stream);
-                byte[] msgBytes = Encoding.ASCII.GetBytes(msg);
-                writer.Write(msgBytes.Length);
-                writer.Write(msgBytes);
-                ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
-                return stream.ToArray();
-            });
-            m_ClientSession.Start();
-        }
     }
     void OnApplicationQuit()
     {
@@ -78,11 +60,6 @@ public class TCPEchoMsgHeaderSample : MonoBehaviour
         {
             m_ServerSession.Close();
             m_ServerSession = null;
-        }
-        if (m_ClientSession != null)
-        {
-            m_ClientSession.Close();
-            m_ClientSession = null;
         }
     }
 }

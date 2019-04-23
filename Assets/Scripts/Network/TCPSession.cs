@@ -111,7 +111,7 @@ namespace Network.TCP
             }
         }
     }
-    public class TCPUser : TCPSession
+    public class TCPClient : TCPSession
     {
         public delegate byte[] EchoHandler();
 
@@ -119,7 +119,7 @@ namespace Network.TCP
         private Thread m_SendThread;
         private EchoHandler m_EchoHandler;
 
-        public TCPUser()
+        public TCPClient()
         {
             m_SessionType = ESessionType.User;
         }
