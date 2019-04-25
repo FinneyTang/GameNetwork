@@ -8,6 +8,7 @@ namespace Network.HTTP
     {
         const string ERR_InvalidArguments = "invalid arguments";
         const string ERR_Timeout = "timeout";
+
         const float DEFAULT_TIMEOUT = 5;
 
         private WWW m_Request;

@@ -58,11 +58,6 @@ public class SyncInputSampleServer : MonoBehaviour
             m_ServerSession.Send(m_ClientInput.Serialize());
         }
     }
-    private void OnGUI()
-    {
-        int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
-        GUI.Label(new Rect(margin, margin, Screen.width - 2 * margin, 20), m_CurrentFrame.ToString());
-    }
     //----------------------------------------------------------
     void OnApplicationQuit()
     {
