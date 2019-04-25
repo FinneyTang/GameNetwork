@@ -1,26 +1,17 @@
 ﻿using Network.Ping;
 using Network.UDP;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PingSample : MonoBehaviour
+public class PingSampleClient : MonoBehaviour
 {
     private PingUtil m_Ping = new PingUtil();
-    private UDPListener m_ServerSession = new UDPListener();
-    private Queue<byte[]> m_ServerRecvedData = new Queue<byte[]>();
-
     private UDPClient m_ClientSession = new UDPClient();
     private Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
-
     private float m_NextPingSentTime = 0;
     void Start ()
     {
-        if (m_ServerSession.Init("127.0.0.1", 30000))
-        {
-            m_ServerSession.Start();
-        }
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
             m_ClientSession.Start();
@@ -42,19 +33,6 @@ public class PingSample : MonoBehaviour
                 m_Ping.PingBack(BitConverter.ToSingle(data, 0));
             }
         }
-        if (m_ServerSession.GetRecvedData(m_ServerRecvedData))
-        {
-            while (m_ServerRecvedData.Count != 0)
-            {
-                var data = m_ServerRecvedData.Dequeue();
-                StartCoroutine(DelaySend(data, UnityEngine.Random.Range(0.1f, 0.3f)));
-            }
-        }
-    }
-    IEnumerator DelaySend(byte[] data, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        m_ServerSession.Send(data);
     }
     void OnGUI()
     {
@@ -63,11 +41,6 @@ public class PingSample : MonoBehaviour
     }
     void OnApplicationQuit()
     {
-        if (m_ServerSession != null)
-        {
-            m_ServerSession.Close();
-            m_ServerSession = null;
-        }
         if (m_ClientSession != null)
         {
             m_ClientSession.Close();
