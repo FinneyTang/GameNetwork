@@ -6,7 +6,16 @@ using UnityEngine;
 
 public class TCPEchoMsgHeaderClient : MonoBehaviour
 {
+    private readonly string[] CLIENT_NAMES = new string[]
+    {
+        "Tom", "Mary", "Jerry", "Finney", "William", "Elizabeth"
+    };
     private TCPClient m_ClientSession;
+    private int m_ClientNameIdx;
+    void Update()
+    {
+        m_ClientNameIdx = Random.Range(0, CLIENT_NAMES.Length);
+    }
     void OnGUI()
     {
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
@@ -19,7 +28,7 @@ public class TCPEchoMsgHeaderClient : MonoBehaviour
                 {
                     m_ClientSession.SetEchoHandler(delegate ()
                     {
-                        string msg = "Hello, Server!";
+                        string msg = string.Format("Hello, Server! I'm {0}", CLIENT_NAMES[m_ClientNameIdx]);
                         MemoryStream stream = new MemoryStream();
                         BinaryWriter writer = new BinaryWriter(stream);
                         byte[] msgBytes = Encoding.ASCII.GetBytes(msg);
