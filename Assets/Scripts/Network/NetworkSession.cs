@@ -24,6 +24,10 @@ namespace Network.Core
         }
         public void Close()
         {
+            if (m_IsClosed == true)
+            {
+                return;
+            }
             m_IsClosed = true;
             OnClose();
         }

@@ -3,3 +3,4 @@ Library/
 *.csproj
 Temp/
 *.suo
+.idea/

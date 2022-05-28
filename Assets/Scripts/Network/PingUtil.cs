@@ -33,18 +33,18 @@ namespace Network.Ping
             m_LastPingSentTime = sendTime;
             m_IsLastPingBack = false;
         }
-        public void PingBack(float sendTime)
+        public void PingBack(float lastSendTime)
         {
             if(m_IsLastPingBack == true)
             {
                 return;
             }
-            if (sendTime < m_LastPingSentTime)
+            if (lastSendTime < m_LastPingSentTime)
             {
                 return;
             }
             m_IsLastPingBack = true;
-            AddPing((Time.time - sendTime) * 1000);
+            AddPing((Time.time - lastSendTime) * 1000);
         }
         private void AddPing(float pingValue)
         {

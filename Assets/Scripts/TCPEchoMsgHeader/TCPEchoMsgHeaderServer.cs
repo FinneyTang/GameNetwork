@@ -24,7 +24,7 @@ public class TCPEchoMsgHeaderServer : MonoBehaviour
                 int avaliableCount = (int)recvStream.Length;
                 recvStream.Seek(0, SeekOrigin.Begin);
                 BinaryReader reader = new BinaryReader(recvStream);
-                int headerSize = 4;
+                const int headerSize = 4;
                 while (true)
                 {
                     if(avaliableCount < headerSize)

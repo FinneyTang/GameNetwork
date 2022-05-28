@@ -22,6 +22,7 @@ public class HTTPSample : MonoBehaviour
     }
     private void TestGet()
     {
+        //http://httpbin.org/get?name=Hello&age=1
         var request = new HTTPRequest();
         request.Get("http://httpbin.org/", "get", (result, data) =>
         {
