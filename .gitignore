@@ -4,3 +4,8 @@ Library/
 Temp/
 *.suo
 .idea/
+/Logs
+/obj
+/UserSettings
+/Server/Server/obj
+Assets/Plugins/Editor/JetBrains.meta
