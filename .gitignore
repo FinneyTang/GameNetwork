@@ -9,3 +9,7 @@ Temp/
 /UserSettings
 /Server/Server/obj
 Assets/Plugins/Editor/JetBrains.meta
+/Server/TCPEcho/obj
+/Server/TCPEcho/bin
+/Server/Common/obj
+/Server/Common/bin
