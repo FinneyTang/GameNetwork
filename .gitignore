@@ -1,6 +1,4 @@
 Library/
-*.sln
-*.csproj
 Temp/
 *.suo
 .idea/
@@ -13,3 +11,8 @@ Assets/Plugins/Editor/JetBrains.meta
 /Server/TCPEcho/bin
 /Server/Common/obj
 /Server/Common/bin
+Assembly-CSharp-Editor-firstpass.csproj
+Assembly-CSharp-firstpass.csproj
+Assembly-CSharp.csproj
+/Server/TCPEchoMsgHeader/obj
+/Server/TCPEchoMsgHeader/bin

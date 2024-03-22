@@ -12,11 +12,13 @@ public class TCPEchoMsgHeaderClient : MonoBehaviour
     };
     private TCPClient m_ClientSession;
     private int m_ClientNameIdx;
-    void Update()
+
+    private void Update()
     {
         m_ClientNameIdx = Random.Range(0, CLIENT_NAMES.Length);
     }
-    void OnGUI()
+
+    private void OnGUI()
     {
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
         if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Connect"))

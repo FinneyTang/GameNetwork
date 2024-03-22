@@ -49,7 +49,7 @@ namespace TCPEcho
     {
         public static void Main(string[] args)
         {
-            TCPEchoServerApp app = new TCPEchoServerApp();
+            var app = new TCPEchoServerApp();
             app.Run();
         }
     }
