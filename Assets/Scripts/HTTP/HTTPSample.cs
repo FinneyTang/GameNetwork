@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class HTTPSample : MonoBehaviour
 {
-    private List<HTTPRequest> m_PendingRequests = new List<HTTPRequest>();
+    private readonly List<HTTPRequest> m_PendingRequests = new List<HTTPRequest>();
     private void Start()
     {
         TestGet();

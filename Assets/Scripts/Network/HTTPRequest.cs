@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Network.HTTP
 {
@@ -11,25 +12,20 @@ namespace Network.HTTP
 
         const float DEFAULT_TIMEOUT = 5;
 
-        private WWW m_Request;
+        private UnityWebRequest m_Request;
         private Action<bool, byte[]> m_RequestFinishedAction;
         private float m_Timeout;
         private string m_LastError = string.Empty;
         private float m_LastProgress = 0f;
-        public string LastError
-        {
-            get
-            {
-                return m_LastError;
-            }
-        }
+        public string LastError => m_LastError;
+
         public float Progress
         {
             get
             {
                 if (m_Request != null)
                 {
-                    return m_Request.progress;
+                    return m_Request.downloadProgress;
                 }
                 return 0f;
             }
@@ -54,12 +50,14 @@ namespace Network.HTTP
                 {
                     paramStr += "&";
                 }
-                paramStr += (args[i * 2].ToString() + "=" + Uri.EscapeDataString(args[i * 2 + 1].ToString()));
+                paramStr += (args[i * 2] + "=" + Uri.EscapeDataString(args[i * 2 + 1].ToString()));
             }
-            string url = Uri.EscapeUriString(addr) + cmd + paramStr;
+            var url = Uri.EscapeUriString(addr) + cmd + paramStr;
             m_RequestFinishedAction = onRequestFinished;
             m_Timeout = Time.time + DEFAULT_TIMEOUT;
-            m_Request = new WWW(url);
+            m_Request = new UnityWebRequest(url);
+            m_Request.downloadHandler = new DownloadHandlerBuffer();
+            m_Request.SendWebRequest();
         }
         public void Post(string addr, string cmd, Action<bool, byte[]> onRequestFinished, byte[] data, Dictionary<string, string> header)
         {
@@ -70,7 +68,17 @@ namespace Network.HTTP
                 data = null;
             }
             m_Timeout = Time.time + DEFAULT_TIMEOUT;
-            m_Request = new WWW(url, data, header);
+            m_Request = new UnityWebRequest(url, "POST");
+            m_Request.uploadHandler = new UploadHandlerRaw(data);
+            m_Request.downloadHandler = new DownloadHandlerBuffer();
+            if(header != null)
+            {
+                foreach(var pair in header)
+                {
+                    m_Request.SetRequestHeader(pair.Key, pair.Value);
+                }
+            }
+            m_Request.SendWebRequest();
         }
         public void CheckPendingRequest()
         {
@@ -81,15 +89,15 @@ namespace Network.HTTP
             if(m_Request.isDone)
             {
                 m_LastError = m_Request.error;
-                m_RequestFinishedAction.Invoke(string.IsNullOrEmpty(m_LastError), m_Request.bytes);
+                m_RequestFinishedAction.Invoke(string.IsNullOrEmpty(m_LastError), m_Request.downloadHandler.data);
                 Dispose();
             }
             else
             {
-                if(m_Request.progress > m_LastProgress)
+                if(m_Request.downloadProgress > m_LastProgress)
                 {
                     m_Timeout = Time.time + DEFAULT_TIMEOUT;
-                    m_LastProgress = m_Request.progress;
+                    m_LastProgress = m_Request.downloadProgress;
                 }
                 if(Time.time > m_Timeout)
                 {
