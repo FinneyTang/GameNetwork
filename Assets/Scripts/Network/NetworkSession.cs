@@ -5,12 +5,7 @@ namespace Network.Core
 {
     public abstract class NetworkSession
     {
-        protected enum ESessionType
-        {
-            None, Server, User
-        }
-        protected ESessionType m_SessionType = ESessionType.None;
-        protected bool m_IsClosed;
+        private bool m_IsClosed;
         protected IPEndPoint m_Addr;
 
         public bool Init(string addr, int port)
@@ -31,23 +26,19 @@ namespace Network.Core
             m_IsClosed = true;
             OnClose();
         }
-        public bool IsClient()
-        {
-            return m_SessionType == ESessionType.User;
-        }
-        public bool IsServer()
-        {
-            return m_SessionType == ESessionType.Server;
-        }
-        public bool IsClosed()
+
+        protected bool IsClosed()
         {
             return m_IsClosed;
         }
-        public Thread CreateThread(ThreadStart threadFunc)
+
+        protected Thread CreateThread(ThreadStart threadFunc)
         {
-            Thread t = new Thread(threadFunc);
-            t.IsBackground = true;
-            t.Priority = ThreadPriority.Normal;
+            var t = new Thread(threadFunc)
+            {
+                IsBackground = true,
+                Priority = ThreadPriority.Normal
+            };
             t.Start();
             return t;
         }

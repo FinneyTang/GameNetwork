@@ -18,6 +18,12 @@ namespace Network.UDP
         protected Queue<byte[]> m_PendingSendData;
 
         protected Queue<byte[]> m_RecvedData;
+        protected bool m_IsServer;
+
+        public UDPSession(bool isServer)
+        {
+            m_IsServer = isServer;
+        }
         protected override void OnStart()
         {
             base.OnStart();
@@ -89,7 +95,7 @@ namespace Network.UDP
                         byte[] data = m_Socket.Receive(ref remoteIPEndPoint);
                         if (data != null && data.Length > 0)
                         {
-                            if (IsServer())
+                            if (m_IsServer)
                             {
                                 m_Addr = remoteIPEndPoint;
                             }
@@ -153,11 +159,11 @@ namespace Network.UDP
             }
         }
     }
+    
     public class UDPListener : UDPSession
     {
-        public UDPListener()
+        public UDPListener() : base(true)
         {
-            m_SessionType = ESessionType.Server;
         }
         protected override bool OnInit(string addr, int port)
         {
@@ -173,11 +179,11 @@ namespace Network.UDP
             return false;
         }
     }
+    
     public class UDPClient : UDPSession
     {
-        public UDPClient()
+        public UDPClient() : base(false)
         {
-            m_SessionType = ESessionType.User;
         }
         protected override bool OnInit(string addr, int port)
         {
