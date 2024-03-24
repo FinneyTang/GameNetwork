@@ -43,7 +43,6 @@ namespace Common
         }
         protected override void OnClose()
         {
-            Logger.LogInfo("TCPServer closed");
             if (m_AcceptThread != null)
             {
                 m_AcceptThread.Join(2000);
@@ -117,6 +116,7 @@ namespace Common
                         {
                             var thread = CreateThread(() => RecvThreadFunc(client));
                             m_Clients.Add(new TCPClientInfo { Client = client, RecvThread = thread });
+                            Logger.LogInfo($"Add client {client.Client.RemoteEndPoint}");
                         }
                     }
                     else

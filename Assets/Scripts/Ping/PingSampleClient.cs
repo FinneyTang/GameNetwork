@@ -6,18 +6,20 @@ using UnityEngine;
 
 public class PingSampleClient : MonoBehaviour
 {
-    private PingUtil m_Ping = new PingUtil();
+    private readonly PingUtil m_Ping = new PingUtil();
     private UDPClient m_ClientSession = new UDPClient();
-    private Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
+    private readonly Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
     private float m_NextPingSentTime = 0;
-    void Start ()
+
+    private void Start ()
     {
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
             m_ClientSession.Start();
         }
     }
-	void Update ()
+
+    private void Update ()
     {
 		if(Time.time > m_NextPingSentTime)
         {
@@ -34,12 +36,14 @@ public class PingSampleClient : MonoBehaviour
             }
         }
     }
-    void OnGUI()
+
+    private void OnGUI()
     {
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
         GUI.Label(new Rect(margin, margin, Screen.width - 2 * margin, 20), m_Ping.CurPing.ToString("f0"));
     }
-    void OnApplicationQuit()
+
+    private void OnApplicationQuit()
     {
         if (m_ClientSession != null)
         {

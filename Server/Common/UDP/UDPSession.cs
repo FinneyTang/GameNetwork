@@ -170,6 +170,7 @@ namespace Common
                                     };
                                     clientInfo.SendThread = CreateThread(() => ClientSendThreadFunc(clientInfo));
                                     m_Client.Add(clientKey, clientInfo);
+                                    Logger.LogInfo($"Add client {clientKey}");
                                 }
                             }
                             AddRecvData(new UDPPacket()

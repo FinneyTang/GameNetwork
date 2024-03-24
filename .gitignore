@@ -20,3 +20,5 @@ Assembly-CSharp.csproj
 /Server/UDPEcho/obj
 /Server/UDPEchoNumber/obj
 /Server/UDPEchoNumber/bin
+/Server/Ping/bin
+/Server/Ping/obj
