@@ -5,7 +5,7 @@ using Common;
 
 namespace TCPEchoMsgHeader
 {
-    internal class TCPEchoServerApp : AppBase
+    internal class TCPEchoMsgHeaderApp : AppBase
     {
         private TCPSession m_TCPServer;
         private readonly MemoryStream m_PendingStream = new MemoryStream();
@@ -49,7 +49,7 @@ namespace TCPEchoMsgHeader
             }
         }
 
-        protected override void OnRun()
+        protected override void OnInit()
         {
             m_TCPServer = new TCPSession(TCPDataHandler);
             m_TCPServer.Init("127.0.0.1", 30000);
@@ -70,7 +70,7 @@ namespace TCPEchoMsgHeader
     {
         public static void Main(string[] args)
         {
-            var app = new TCPEchoServerApp();
+            var app = new TCPEchoMsgHeaderApp();
             app.Run();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Network.UDP;
 using System.Text;
+using Network.Core;
 using UnityEngine;
 
 public class UDPEchoClient : MonoBehaviour
@@ -17,7 +18,9 @@ public class UDPEchoClient : MonoBehaviour
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
         if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Say Hello"))
         {
-            m_ClientSession.Send(Encoding.ASCII.GetBytes("Hello Server!"));
+            const string msg = "Hello, Server!";
+            m_ClientSession.Send(Encoding.ASCII.GetBytes(msg));
+            ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
         }
     }
     void OnApplicationQuit()

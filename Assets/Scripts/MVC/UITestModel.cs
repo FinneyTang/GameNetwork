@@ -15,7 +15,7 @@ public class UITestModel
         return m_Inst;
     }
 
-    private List<Action> m_Observers = new List<Action>();
+    private readonly List<Action> m_Observers = new List<Action>();
 
     public void AddObserver(Action cb)
     {

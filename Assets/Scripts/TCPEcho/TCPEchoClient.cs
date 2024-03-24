@@ -10,7 +10,7 @@ public class TCPEchoClient : MonoBehaviour
 
     private byte[] EchoGeneraterMessage()
     {
-        var msg = "Hello, Server!";
+        const string msg = "Hello, Server!";
         ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
         return Encoding.ASCII.GetBytes(msg);
     }

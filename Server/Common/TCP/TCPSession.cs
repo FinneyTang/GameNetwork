@@ -10,7 +10,7 @@ namespace Common
         private TcpListener m_Listener;
         private Thread m_AcceptThread;
 
-        private struct TCPClientInfo
+        private class TCPClientInfo
         {
             public TcpClient Client;
             public Thread RecvThread;
@@ -22,7 +22,7 @@ namespace Common
         {
             m_DataHandler = dataHandler;
         }
-        protected override bool OnInit(string addr, int port)
+        protected override bool OnInit()
         {
             try
             {
@@ -40,21 +40,18 @@ namespace Common
             base.OnStart();
             m_Listener.Start();
             m_AcceptThread = CreateThread(AcceptThreadFunc);
-            Logger.LogInfo("TCPServer started at " + m_Addr.Address + ":" + m_Addr.Port);
         }
         protected override void OnClose()
         {
             Logger.LogInfo("TCPServer closed");
             if (m_AcceptThread != null)
             {
-                Logger.LogInfo("Join accept thread");
                 m_AcceptThread.Join(2000);
                 m_AcceptThread.Abort();
                 m_AcceptThread = null;
             }
             lock (m_Clients)
             {
-                Logger.LogInfo("Join client threads");
                 foreach (var client in m_Clients)
                 {
                     if (client.RecvThread != null)
@@ -71,7 +68,6 @@ namespace Common
             }
             if (m_Listener != null)
             {
-                Logger.LogInfo("Stop listener");
                 m_Listener.Stop();
                 m_Listener = null;
             }
@@ -119,10 +115,7 @@ namespace Common
                         TcpClient client = m_Listener.AcceptTcpClient();
                         lock (m_Clients)
                         {
-                            var thread = new Thread(() => RecvThreadFunc(client));
-                            thread.IsBackground = true;
-                            thread.Priority = ThreadPriority.Normal;
-                            thread.Start(); 
+                            var thread = CreateThread(() => RecvThreadFunc(client));
                             m_Clients.Add(new TCPClientInfo { Client = client, RecvThread = thread });
                         }
                     }

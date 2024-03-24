@@ -16,3 +16,5 @@ Assembly-CSharp-firstpass.csproj
 Assembly-CSharp.csproj
 /Server/TCPEchoMsgHeader/obj
 /Server/TCPEchoMsgHeader/bin
+/Server/UDPEcho/bin
+/Server/UDPEcho/obj

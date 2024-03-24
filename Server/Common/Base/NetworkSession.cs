@@ -11,12 +11,13 @@ namespace Common
         public bool Init(string addr, int port)
         {
             m_Addr = new IPEndPoint(IPAddress.Parse(addr), port);
-            return OnInit(addr, port);
+            return OnInit();
         }
         
         public void Start()
         {
             OnStart();
+            Logger.LogInfo("Server started at " + m_Addr.Address + ":" + m_Addr.Port);
         }
         
         public void Close()
@@ -27,23 +28,26 @@ namespace Common
             }
             m_IsClosed = true;
             OnClose();
+            Logger.LogInfo("Server close");
         }
 
-        protected bool IsClosed()
+        public bool IsClosed()
         {
             return m_IsClosed;
         }
         
         protected Thread CreateThread(ThreadStart threadFunc)
         {
-            Thread t = new Thread(threadFunc);
-            t.IsBackground = true;
-            t.Priority = ThreadPriority.Normal;
+            var t = new Thread(threadFunc)
+            {
+                IsBackground = true,
+                Priority = ThreadPriority.Normal
+            };
             t.Start();
             return t;
         }
         
-        protected virtual bool OnInit(string addr, int port)
+        protected virtual bool OnInit()
         {
             return false;
         }

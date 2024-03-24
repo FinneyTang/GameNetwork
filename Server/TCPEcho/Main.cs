@@ -4,13 +4,13 @@ using Common;
 
 namespace TCPEcho
 {
-    internal class TCPEchoServerApp : AppBase
+    internal class TCPEchoApp : AppBase
     {
         private TCPSession m_TCPServer;
         private string m_PendingMsg = string.Empty;
         private void TCPDataHandler(byte[] data, int dataLen)
         {
-            string msg = Encoding.ASCII.GetString(data, 0, dataLen);
+            var msg = Encoding.ASCII.GetString(data, 0, dataLen);
             m_PendingMsg += msg;
             while (true)
             {
@@ -28,7 +28,7 @@ namespace TCPEcho
             }
         }
 
-        protected override void OnRun()
+        protected override void OnInit()
         {
             m_TCPServer = new TCPSession(TCPDataHandler);
             m_TCPServer.Init("127.0.0.1", 30000);
@@ -45,11 +45,11 @@ namespace TCPEcho
         }
     }
     
-    internal static class TCPEchoServer
+    internal static class TCPEcho
     {
         public static void Main(string[] args)
         {
-            var app = new TCPEchoServerApp();
+            var app = new TCPEchoApp();
             app.Run();
         }
     }

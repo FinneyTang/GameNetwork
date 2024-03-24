@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TCPEchoMsgHeader", "TCPEchoMsgHeader\TCPEchoMsgHeader.csproj", "{0C753458-CACF-4BEB-B6DE-096142734775}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UDPEcho", "UDPEcho\UDPEcho.csproj", "{006E2F5C-2D32-4F1F-BBAA-5CAEDAA29072}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{0C753458-CACF-4BEB-B6DE-096142734775}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C753458-CACF-4BEB-B6DE-096142734775}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C753458-CACF-4BEB-B6DE-096142734775}.Release|Any CPU.Build.0 = Release|Any CPU
+		{006E2F5C-2D32-4F1F-BBAA-5CAEDAA29072}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{006E2F5C-2D32-4F1F-BBAA-5CAEDAA29072}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{006E2F5C-2D32-4F1F-BBAA-5CAEDAA29072}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{006E2F5C-2D32-4F1F-BBAA-5CAEDAA29072}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
