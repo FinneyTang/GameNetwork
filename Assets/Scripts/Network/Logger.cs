@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Network.Core
 {
@@ -14,19 +15,20 @@ namespace Network.Core
             switch (type)
             {
                 case LogColor.Green:
-                    fmtWithColorTag = "<color=green>{0}</color>";
+                    fmtWithColorTag = "[{0}]: <color=green>{1}</color>";
                     break;
                 case LogColor.Yellow:
-                    fmtWithColorTag = "<color=yellow>{0}</color>";
+                    fmtWithColorTag = "[{0}]: <color=yellow>{1}</color>";
                     break;
                 case LogColor.Red:
-                    fmtWithColorTag = "<color=red>{0}</color>";
+                    fmtWithColorTag = "[{0}]: <color=red>{1}</color>";
                     break;
                 default:
-                    fmtWithColorTag = "{0}";
+                    fmtWithColorTag = "[{0}]: {1}";
                     break;
             }
-            Debug.Log(string.Format(fmtWithColorTag, message));
+            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            Debug.Log(string.Format(fmtWithColorTag, timestamp, message));
         }
     }
 }

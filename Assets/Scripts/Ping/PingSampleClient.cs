@@ -37,10 +37,22 @@ public class PingSampleClient : MonoBehaviour
         }
     }
 
+    private GUIStyle m_GUIStyle;
     private void OnGUI()
     {
-        int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
-        GUI.Label(new Rect(margin, margin, Screen.width - 2 * margin, 20), m_Ping.CurPing.ToString("f0"));
+        if (m_GUIStyle == null)
+        {
+            m_GUIStyle = new GUIStyle
+            {
+                fontSize = 100,
+                normal =
+                {
+                    textColor = Color.yellow
+                },
+                alignment = TextAnchor.MiddleCenter
+            };
+        }
+        GUI.Label(new Rect(0, 0, Screen.width, Screen.height), m_Ping.CurPing.ToString("f0"), m_GUIStyle);
     }
 
     private void OnApplicationQuit()
