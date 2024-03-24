@@ -18,3 +18,5 @@ Assembly-CSharp.csproj
 /Server/TCPEchoMsgHeader/bin
 /Server/UDPEcho/bin
 /Server/UDPEcho/obj
+/Server/UDPEchoNumber/obj
+/Server/UDPEchoNumber/bin

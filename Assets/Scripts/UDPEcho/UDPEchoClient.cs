@@ -6,14 +6,16 @@ using UnityEngine;
 public class UDPEchoClient : MonoBehaviour
 {
     private UDPClient m_ClientSession = new UDPClient();
-    void Start()
+
+    private void Start()
     {
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
             m_ClientSession.Start();
         }
     }
-    void OnGUI()
+
+    private void OnGUI()
     {
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
         if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Say Hello"))
@@ -23,7 +25,8 @@ public class UDPEchoClient : MonoBehaviour
             ColoredLogger.Log(msg, ColoredLogger.LogColor.Green);
         }
     }
-    void OnApplicationQuit()
+
+    private void OnApplicationQuit()
     {
         if (m_ClientSession != null)
         {
