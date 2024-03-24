@@ -22,3 +22,5 @@ Assembly-CSharp.csproj
 /Server/UDPEchoNumber/bin
 /Server/Ping/bin
 /Server/Ping/obj
+/Server/CustomMsg/obj
+/Server/CustomMsg/bin

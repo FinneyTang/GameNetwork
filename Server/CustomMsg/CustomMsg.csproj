@@ -5,13 +5,14 @@
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{0F9364B1-57B2-4801-BBFC-3DA1E9F70AD1}</ProjectGuid>
-        <OutputType>Library</OutputType>
+        <ProjectGuid>{641D6F2F-DD77-4783-AE19-94B0E1734CCC}</ProjectGuid>
+        <OutputType>Exe</OutputType>
         <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>Common</RootNamespace>
-        <AssemblyName>Common</AssemblyName>
+        <RootNamespace>CustomMsg</RootNamespace>
+        <AssemblyName>CustomMsg</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -39,15 +40,14 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Base\AppBase.cs" />
-        <Compile Include="Base\RandomUtils.cs" />
-        <Compile Include="Base\TimeUtils.cs" />
-        <Compile Include="Base\Logger.cs" />
-        <Compile Include="Base\NetworkSession.cs" />
-        <Compile Include="Base\Vector3.cs" />
+        <Compile Include="Main.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="TCP\TCPSession.cs" />
-        <Compile Include="UDP\UDPSession.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Common\Common.csproj">
+        <Project>{0f9364b1-57b2-4801-bbfc-3da1e9f70ad1}</Project>
+        <Name>Common</Name>
+      </ProjectReference>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -28,8 +28,8 @@ namespace UDPEcho
             }
             while (m_RecvData.Count != 0)
             {
-                var data = m_RecvData.Dequeue();
-                Logger.LogInfo($"Msg From User({data.ClientKey}): [{Encoding.ASCII.GetString(data.Data)}]");
+                var packet = m_RecvData.Dequeue();
+                Logger.LogInfo($"Msg From User({packet.ClientKey}): [{Encoding.ASCII.GetString(packet.Data)}]");
             }
             return true;
         }

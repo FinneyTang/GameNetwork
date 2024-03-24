@@ -4,7 +4,7 @@ namespace Common
 {
     public static class Logger
     {
-        enum ELogLevel
+        private enum ELogLevel
         {
             Info,
             Warning,
