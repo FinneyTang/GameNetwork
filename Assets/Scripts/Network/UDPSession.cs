@@ -8,25 +8,38 @@ using UnityEngine;
 
 namespace Network.UDP
 {
-    public abstract class UDPSession : NetworkSession
+    public class UDPClient : NetworkSession
     {
-        protected UdpClient m_Socket;
-        protected Thread m_RecieveThread;
-        protected Thread m_SendThread;
+        private UdpClient m_Socket;
+        private Thread m_RecieveThread;
+        private Thread m_SendThread;
 
-        protected AutoResetEvent m_SendDataSignal;
-        protected Queue<byte[]> m_PendingSendData;
+        private AutoResetEvent m_SendDataSignal;
+        private Queue<byte[]> m_PendingSendData;
 
-        protected Queue<byte[]> m_RecvedData;
-        protected bool m_IsServer;
+        private Queue<byte[]> m_RecvedData;
+        private string m_ClientKey;
 
-        public UDPSession(bool isServer)
+        protected override bool OnInit()
         {
-            m_IsServer = isServer;
+            try
+            {
+                m_Socket = new UdpClient();
+                m_Socket.Connect(m_Addr);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("AsClient error: " + e);
+            }
+            return false;
         }
         protected override void OnStart()
         {
             base.OnStart();
+
+            m_ClientKey = m_Socket.Client.LocalEndPoint.ToString();
+            
             m_SendDataSignal = new AutoResetEvent(false);
             m_PendingSendData = new Queue<byte[]>();
             m_RecvedData = new Queue<byte[]>();
@@ -55,6 +68,9 @@ namespace Network.UDP
                 m_Socket = null;
             }
         }
+
+        public string ClientKey => m_ClientKey;
+        
         public void Send(byte[] msg)
         {
             lock (m_PendingSendData)
@@ -77,7 +93,7 @@ namespace Network.UDP
         }
         private void RecieveThreadFunc()
         {
-            IPEndPoint remoteIPEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            IPEndPoint remoteIPEndPoint = null;
             while (true)
             {
                 if (IsClosed())
@@ -92,13 +108,9 @@ namespace Network.UDP
                         {
                             return;
                         }
-                        byte[] data = m_Socket.Receive(ref remoteIPEndPoint);
-                        if (data != null && data.Length > 0)
+                        var data = m_Socket.Receive(ref remoteIPEndPoint);
+                        if (data.Length > 0)
                         {
-                            if (m_IsServer)
-                            {
-                                m_Addr = remoteIPEndPoint;
-                            }
                             lock (m_RecvedData)
                             {
                                 m_RecvedData.Enqueue(data);
@@ -124,7 +136,7 @@ namespace Network.UDP
         }
         private void SendThreadFunc()
         {
-            Queue<byte[]> dataToSend = new Queue<byte[]>();
+            var dataToSend = new Queue<byte[]>();
             while (true)
             {
                 if (IsClosed())
@@ -144,10 +156,10 @@ namespace Network.UDP
                     }
                     while (dataToSend.Count != 0)
                     {
-                        byte[] data = dataToSend.Dequeue();
+                        var data = dataToSend.Dequeue();
                         if (data != null && data.Length > 0)
                         {
-                            m_Socket.Send(data, data.Length, m_Addr);
+                            m_Socket.Send(data, data.Length);
                         }
                     }
                 }
@@ -157,46 +169,6 @@ namespace Network.UDP
                     return;
                 }
             }
-        }
-    }
-    
-    public class UDPListener : UDPSession
-    {
-        public UDPListener() : base(true)
-        {
-        }
-        protected override bool OnInit(string addr, int port)
-        {
-            try
-            {
-                m_Socket = new UdpClient(port);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("AsServer error: " + e.ToString());
-            }
-            return false;
-        }
-    }
-    
-    public class UDPClient : UDPSession
-    {
-        public UDPClient() : base(false)
-        {
-        }
-        protected override bool OnInit(string addr, int port)
-        {
-            try
-            {
-                m_Socket = new UdpClient();
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("AsClient error: " + e.ToString());
-            }
-            return false;
         }
     }
 }

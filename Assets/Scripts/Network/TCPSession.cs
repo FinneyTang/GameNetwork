@@ -1,10 +1,6 @@
 ﻿using Network.Core;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using UnityEngine;
 
@@ -22,7 +18,7 @@ namespace Network.TCP
         {
             m_EchoHandler = handler;
         }
-        protected override bool OnInit(string addr, int port)
+        protected override bool OnInit()
         {
             try
             {

@@ -20,8 +20,8 @@ namespace CustomMsg
 
             public override byte[] Serialize()
             {
-                MemoryStream stream = new MemoryStream();
-                BinaryWriter writer = new BinaryWriter(stream);
+                var stream = new MemoryStream();
+                var writer = new BinaryWriter(stream);
                 writer.Write(PlayerID);
                 writer.Write(TargetPosition.x);
                 writer.Write(TargetPosition.y);
@@ -31,8 +31,8 @@ namespace CustomMsg
             }
             public override void Unserialize(byte[] data)
             {
-                MemoryStream stream = new MemoryStream(data);
-                BinaryReader reader = new BinaryReader(stream);
+                var stream = new MemoryStream(data);
+                var reader = new BinaryReader(stream);
                 PlayerID = reader.ReadInt32();
                 TargetPosition.x = reader.ReadSingle();
                 TargetPosition.y = reader.ReadSingle();
@@ -64,7 +64,7 @@ namespace CustomMsg
             m_UDPServer.Start();
         }
 
-        protected override bool OnRun()
+        protected override bool OnRun(float curTimestamp)
         {
             if (m_UDPServer == null || m_UDPServer.IsClosed())
             {

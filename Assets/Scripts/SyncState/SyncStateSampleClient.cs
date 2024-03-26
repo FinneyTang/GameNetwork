@@ -1,73 +1,138 @@
 ﻿using Network.UDP;
 using System.Collections.Generic;
+using SyncState;
 using UnityEngine;
 
 public class SyncStateSampleClient : MonoBehaviour
 {
     public Transform ClientObjectTF;
+    public Transform ServerObjectTF;
 
     private UDPClient m_ClientSession = new UDPClient();
-    private Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
-    void Start()
+    private readonly Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
+
+    private class ClientObject
     {
+        public Transform ObjectTF; 
+        
+        public Vector3 TargetPos = Vector3.zero; 
+        public Quaternion TargetRot = Quaternion.identity;
+        public Vector3 StartPos; 
+        public Quaternion StartRot; 
+        
+        public float LastTimeStamp; 
+        public float SimTime; 
+        public float TotalTime;
+    }
+    private readonly Dictionary<string, ClientObject> m_Objects = new Dictionary<string, ClientObject>();
+
+    private void Start()
+    {
+        Application.targetFrameRate = 60;
+        
+        ClientObjectTF.gameObject.SetActive(false);
+        ServerObjectTF.gameObject.SetActive(false);
+        
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
             m_ClientSession.Start();
         }
     }
-    void Update()
+
+    private void Update()
     {
+        SendInput();
         ClientUpdate();
     }
-    private Vector3 m_TargetPos = Vector3.zero;
-    private Quaternion m_TargetRot = Quaternion.identity;
-    private float m_LastTimeStamp;
-    private Vector3 m_StartPos;
-    private Quaternion m_StartRot;
-    private float m_SimTime;
-    private float m_TotalTime;
-    void ClientUpdate()
+
+    private void ClientUpdate()
     {
         if (m_ClientSession.GetRecvedData(m_ClientRecvedData))
         {
             while (m_ClientRecvedData.Count != 0)
             {
                 var data = m_ClientRecvedData.Dequeue();
-                StateMsg msg = new StateMsg();
+                var msg = new SyncState.StateMsg();
                 msg.Unserialize(data);
-                if (msg.TimeStamp > m_LastTimeStamp)
+                if (!m_Objects.TryGetValue(msg.ClientKey, out var obj))
                 {
-                    m_TargetPos = msg.TargetPosition;
-                    m_TargetRot = msg.TargetOrientation;
-                    m_StartPos = ClientObjectTF.position;
-                    m_StartRot = ClientObjectTF.rotation;
-                    m_TotalTime = (m_TotalTime - m_SimTime) + msg.TimeStamp - m_LastTimeStamp;
-                    if (m_TotalTime > 1f)
+                    obj = new ClientObject();
+                    obj.ObjectTF = Instantiate(ClientObjectTF, ClientObjectTF.parent);
+                    obj.ObjectTF.gameObject.SetActive(true);
+                    obj.ObjectTF.position = msg.TargetPosition;
+                    obj.ObjectTF.rotation = Quaternion.LookRotation(msg.TargetForward);
+                    obj.LastTimeStamp = msg.TimeStamp;
+                    m_Objects[msg.ClientKey] = obj;
+                    if (msg.ClientKey == m_ClientSession.ClientKey)
                     {
-                        m_TotalTime = msg.TimeStamp - m_LastTimeStamp;
+                        ServerObjectTF.gameObject.SetActive(true);
                     }
-                    m_SimTime = 0;
-                    m_LastTimeStamp = msg.TimeStamp;
+                }
+                if (msg.TimeStamp > obj.LastTimeStamp)
+                {
+                    obj.TargetPos = msg.TargetPosition;
+                    obj.TargetRot = Quaternion.LookRotation(msg.TargetForward);
+                    obj.StartPos = obj.ObjectTF.position;
+                    obj.StartRot = obj.ObjectTF.rotation;
+                    obj.TotalTime = Mathf.Max(obj.TotalTime - obj.SimTime, 0f) + msg.TimeStamp - obj.LastTimeStamp;
+                    if (obj.TotalTime > 1f)
+                    {
+                        obj.TotalTime = msg.TimeStamp - obj.LastTimeStamp;
+                    }
+                    obj.SimTime = 0;
+                    obj.LastTimeStamp = msg.TimeStamp;
+
+                    if (msg.ClientKey == m_ClientSession.ClientKey)
+                    {
+                        ServerObjectTF.position = obj.TargetPos;
+                        ServerObjectTF.rotation = obj.TargetRot;   
+                    }
                 }
             }
         }
-        if (m_TotalTime < Mathf.Epsilon)
+
+        foreach (var pair in m_Objects)
         {
-            return;
+            var obj = pair.Value;
+            if (obj.TotalTime < Mathf.Epsilon)
+            {
+                continue;
+            }
+            obj.SimTime += Time.deltaTime;
+            var ratio = Mathf.Clamp01(obj.SimTime / obj.TotalTime);
+            obj.ObjectTF.position = Vector3.Lerp(obj.StartPos, obj.TargetPos, ratio);
+            obj.ObjectTF.rotation = Quaternion.Slerp(obj.StartRot, obj.TargetRot, ratio);
+
+            //Debug.Log(Time.deltaTime + ", " + obj.SimTime + ", " + obj.TotalTime + ", " + obj.LastTimeStamp + ", " + ratio);
         }
-        m_SimTime += Time.deltaTime;
-        float ratio = Mathf.Clamp01(m_SimTime / m_TotalTime);
-        ClientObjectTF.position = Vector3.Lerp(m_StartPos, m_TargetPos, ratio);
-        ClientObjectTF.rotation = Quaternion.Slerp(m_StartRot, m_TargetRot, ratio);
     }
-    void OnGUI()
+
+    private void SendInput()
     {
-        if (GUI.Button(new Rect(10, 10, 100, 50), "Connect"))
+        var msg = new SyncState.InputMsg();
+        if (Input.GetKey(KeyCode.A))
         {
-            m_ClientSession.Send(new byte[] { 0 });
+            msg.Dir.x = -1;
         }
+        if (Input.GetKey(KeyCode.D))
+        {
+            msg.Dir.x = 1;
+        }
+        if (Input.GetKey(KeyCode.W))
+        {
+            msg.Dir.z = 1;
+        }
+        if (Input.GetKey(KeyCode.S))
+        {
+            msg.Dir.z = -1;
+        }
+        msg.Dir = Camera.main.transform.TransformDirection(msg.Dir);
+        msg.Dir.y = 0;
+        msg.Dir.Normalize();
+        m_ClientSession.Send(msg.Serialize());
     }
-    void OnApplicationQuit()
+
+    private void OnApplicationQuit()
     {
         if (m_ClientSession != null)
         {

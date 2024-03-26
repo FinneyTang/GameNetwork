@@ -11,10 +11,23 @@ namespace Common
         
         private uint m_TimerActionId = 0;
         private readonly Dictionary<uint, TimerAction> m_TimerActions = new Dictionary<uint, TimerAction>();
+
+        private int m_TargetFPS;
+        private float m_FrameDuration;
+
+        protected AppBase()
+        {
+            SetTargetFPS(30); //set fps to 30
+        }
         private void Init()
         {
             Console.CancelKeyPress += CancelKeyPressHandler;
             OnInit();
+        }
+        protected void SetTargetFPS(int fps)
+        {
+            m_TargetFPS = Math.Max(1, fps);
+            m_FrameDuration = 1f / m_TargetFPS;
         }
         public void Run()
         {
@@ -23,18 +36,27 @@ namespace Common
                 Init();
                 m_HasInited = true;
             }
+            
             while (true)
             {
-                var isRunning = OnRun();
+                var curTimestamp = TimeUtils.GetTimeStamp();
+                
+                var isRunning = OnRun(curTimestamp);
                 if (!isRunning)
                 {
+                    CleanedUp();
                     return;
                 }
-                UpdateTimerAction();
-                //sleep for 16ms to simulate 60fps
-                Thread.Sleep(16);
+                UpdateTimerAction(curTimestamp);
+                
+                //keep frame rate
+                var elapsedTime = TimeUtils.GetTimeStamp() - curTimestamp;
+                var remainingTime = m_FrameDuration - elapsedTime;
+                if(remainingTime > 0)
+                {
+                    Thread.Sleep((int)(remainingTime * 1000));
+                }
             }
-            CleanedUp();
         }
         private void CleanedUp()
         {
@@ -56,9 +78,8 @@ namespace Common
             return timerActionId;
         }
         
-        private void UpdateTimerAction()
+        private void UpdateTimerAction(float curTimestamp)
         {
-            var curTimestamp = TimeUtils.GetTimeStamp();
             foreach (var pair in m_TimerActions)
             {
                 if (pair.Value.IsExpired(curTimestamp))
@@ -81,7 +102,7 @@ namespace Common
         {
         }
 
-        protected virtual bool OnRun()
+        protected virtual bool OnRun(float curTimestamp)
         {
             return true;
         }

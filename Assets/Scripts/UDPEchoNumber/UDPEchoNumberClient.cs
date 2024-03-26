@@ -30,6 +30,7 @@ public class UDPEchoNumberClient : MonoBehaviour
                 if(m_LastNumber == recvNumber)
                 {
                     m_LastNumber++;
+                    ColoredLogger.Log($"recv {recvNumber}, increase to {m_LastNumber}", ColoredLogger.LogColor.Yellow);
                 }
             }
         }
@@ -40,6 +41,7 @@ public class UDPEchoNumberClient : MonoBehaviour
         int margin = (int)(Mathf.Min(Screen.width, Screen.height) * 0.25f);
         if (GUI.Button(new Rect(margin, margin, Screen.width - 2 * margin, Screen.height - 2 * margin), "Say Hello"))
         {
+            ColoredLogger.Log($"send {m_LastNumber}", ColoredLogger.LogColor.Green);
             m_ClientSession.Send(BitConverter.GetBytes(m_LastNumber));
         }
     }

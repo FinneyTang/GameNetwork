@@ -30,19 +30,19 @@ namespace TCPEchoMsgHeader
                     reader.Read(m_PendingStream.GetBuffer(), 0, avaliableCount);
                     break;
                 }
-                int len = reader.ReadInt32();
+                var len = reader.ReadInt32();
                 avaliableCount -= headerSize;
                 if (avaliableCount < len)
                 {
                     recvStream.Seek(-headerSize, SeekOrigin.Current);
-                    int remainingCount = avaliableCount + headerSize;
+                    var remainingCount = avaliableCount + headerSize;
                     m_PendingStream.SetLength(remainingCount);
                     reader.Read(m_PendingStream.GetBuffer(), 0, remainingCount);
                     break;
                 }
                 else
                 {
-                    byte[] msgBytes = reader.ReadBytes(len);
+                    var msgBytes = reader.ReadBytes(len);
                     avaliableCount -= len;
                     Logger.LogInfo("Msg From User: [" + Encoding.ASCII.GetString(msgBytes, 0, len) + "]");
                 }

@@ -1,29 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Network.Ping
 {
     class PingUtil
     {
-        static private int PING_MAX_AVERAGER_COUNT = 5;
-        static private int PING_MAX_VALUE = 1000;
+        private static int PING_MAX_AVERAGER_COUNT = 5;
+        private static int PING_MAX_VALUE = 1000;
 
-        private Queue<float> m_PingAverager = new Queue<float>();
+        private readonly Queue<float> m_PingAverager = new Queue<float>();
         private float m_PingTotal = 0;
         private float m_CurrentPing = 0;
         private float m_LastPingSentTime = 0;
         private bool m_IsLastPingBack = false;
 
-        public float CurPing
-        {
-            get
-            {
-                return m_CurrentPing;
-            }
-        }
+        public float CurPing => m_CurrentPing;
+
         public void PingSent(float sendTime)
         {
             if(m_IsLastPingBack == false && Mathf.Abs(m_LastPingSentTime) > Mathf.Epsilon)

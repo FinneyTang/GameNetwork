@@ -11,7 +11,7 @@ namespace Network.Core
         public bool Init(string addr, int port)
         {
             m_Addr = new IPEndPoint(IPAddress.Parse(addr), port);
-            return OnInit(addr, port);
+            return OnInit();
         }
         public void Start()
         {
@@ -42,7 +42,7 @@ namespace Network.Core
             t.Start();
             return t;
         }
-        protected virtual bool OnInit(string addr, int port)
+        protected virtual bool OnInit()
         {
             return false;
         }

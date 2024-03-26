@@ -24,3 +24,9 @@ Assembly-CSharp.csproj
 /Server/Ping/obj
 /Server/CustomMsg/obj
 /Server/CustomMsg/bin
+/Server/SyncState/bin
+/Server/SyncState/obj
+/Server/SyncInput/bin
+/Server/SyncInput/obj
+/Server/SyncState2/bin
+/Server/SyncState2/obj

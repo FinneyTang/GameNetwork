@@ -1,7 +1,6 @@
 ﻿using Network.UDP;
-using System;
 using System.Collections.Generic;
-using System.IO;
+using SyncInput;
 using UnityEngine;
 
 public class SyncInputSampleClient : MonoBehaviour
@@ -10,108 +9,160 @@ public class SyncInputSampleClient : MonoBehaviour
     public Transform PreObjectTF;
 
     private UDPClient m_ClientSession = new UDPClient();
-    private Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
-    void Start()
+    private readonly Queue<byte[]> m_ClientRecvedData = new Queue<byte[]>();
+    
+    private int m_CurFrameCount = 0;
+    
+    //object in the presentation layer
+    private class PresObject
     {
+        public Transform ObjectTF; 
+        
+        public Vector3 TargetPos = Vector3.zero; 
+        public Quaternion TargetRot = Quaternion.identity;
+        public Vector3 StartPos; 
+        public Quaternion StartRot; 
+        
+        public float SimTime; 
+        public float TotalTime;
+    }
+    private readonly Dictionary<string, PresObject> m_PresObjects = new Dictionary<string, PresObject>();
+    
+    //object in the logic layer
+    private const int LOGIC_FRAME_TIME = 66; //15fps, ms
+    private class LogicObject
+    {
+        public FixedVector3 LogicPos = FixedVector3.zero;
+        public FixedVector3 LogicFwd = new FixedVector3(0, 0, 1000);   
+    }
+    private readonly Dictionary<string, LogicObject> m_LogicObjects = new Dictionary<string, LogicObject>();
+
+    private void Start()
+    {
+        Application.targetFrameRate = 60;
+        
+        PreObjectTF.gameObject.SetActive(false);
+        
         if (m_ClientSession.Init("127.0.0.1", 30000))
         {
             m_ClientSession.Start();
         }
     }
-    void Update()
+
+    private void Update()
     {
-        ClientSimUpdate();
+        SendInput();
+        ClientLogicUpdate();
         ClientPresentationUpdate();
     }
-    private bool m_HasClientConnected = false;
-    private Vector3 m_TargetPos = Vector3.zero;
-    private Quaternion m_TargetRot = Quaternion.identity;
-    private Vector3 m_StartPos;
-    private Quaternion m_StartRot;
-    private float m_SimTime;
-    private float m_TotalTime;
-    void ClientSimUpdate()
+    
+    private void ClientLogicUpdate()
     {
-        if (m_HasClientConnected)
-        {
-            SendInput();
-        }
         if (m_ClientSession.GetRecvedData(m_ClientRecvedData))
         {
-            int frameCount = 0;
             while (m_ClientRecvedData.Count != 0)
             {
-                InputMsg msg = new InputMsg();
+                var msg = new FrameClientInputsMsg();
                 msg.Unserialize(m_ClientRecvedData.Dequeue());
+                if (m_CurFrameCount >= msg.FrameCount)
+                {
+                    continue;
+                }
+                m_CurFrameCount = msg.FrameCount;
                 UpdateByServer(msg);
-                frameCount++;
             }
-            SimObjectTF.position = m_SimPos;
-            SimObjectTF.rotation = m_SimRot;
+            //for debug only
+            if (m_LogicObjects.TryGetValue(m_ClientSession.ClientKey, out var localClient))
+            {
+                SimObjectTF.position = localClient.LogicPos.ToVector3();
+                SimObjectTF.forward = localClient.LogicFwd.ToVector3();
+            }
+        }
+    }
 
-            m_TargetPos = m_SimPos;
-            m_TargetRot = m_SimRot;
-            m_StartPos = PreObjectTF.position;
-            m_StartRot = PreObjectTF.rotation;
-            m_TotalTime = Time.fixedDeltaTime * frameCount;
-            m_SimTime = 0;
-        }
-    }
-    public void ClientPresentationUpdate()
+    private void ClientPresentationUpdate()
     {
-        if (m_TotalTime < Mathf.Epsilon)
+        foreach (var pair in m_PresObjects)
         {
-            return;
+            var presObject = pair.Value;
+            if (presObject.TotalTime < Mathf.Epsilon)
+            {
+                continue;
+            }
+            presObject.SimTime += Time.deltaTime;
+            var ratio = Mathf.Clamp01(presObject.SimTime / presObject.TotalTime);
+            presObject.ObjectTF.position = Vector3.Lerp(presObject.StartPos, presObject.TargetPos, ratio);
+            presObject.ObjectTF.rotation = Quaternion.Slerp(presObject.StartRot, presObject.TargetRot, ratio);
         }
-        m_SimTime += Time.deltaTime;
-        float ratio = Mathf.Clamp01(m_SimTime / m_TotalTime);
-        PreObjectTF.position = Vector3.Lerp(m_StartPos, m_TargetPos, ratio);
-        PreObjectTF.rotation = Quaternion.Slerp(m_StartRot, m_TargetRot, ratio);
     }
-    void SendInput()
+
+    private void SendInput()
     {
-        InputMsg msg = new InputMsg();
+        Vector3 dir = new Vector3();
         if (Input.GetKey(KeyCode.A))
         {
-            msg.Dir.x = -1;
+            dir.x = -1;
         }
         if (Input.GetKey(KeyCode.D))
         {
-            msg.Dir.x = 1;
+            dir.x = 1;
         }
         if (Input.GetKey(KeyCode.W))
         {
-            msg.Dir.y = 1;
+            dir.z = 1;
         }
         if (Input.GetKey(KeyCode.S))
         {
-            msg.Dir.y = -1;
+            dir.z = -1;
         }
-        m_ClientSession.Send(msg.Serialize());
-    }
-    private Vector3 m_SimPos = Vector3.zero;
-    private Quaternion m_SimRot = Quaternion.identity;
-    void UpdateByServer(InputMsg msg)
-    {
-        Vector3 dir = new Vector3(msg.Dir.x, 0, msg.Dir.y);
         dir = Camera.main.transform.TransformDirection(dir);
         dir.y = 0;
         dir.Normalize();
-        m_SimPos += 5 * Time.fixedDeltaTime * dir;
-        if(dir.sqrMagnitude > Mathf.Epsilon)
-        {
-            m_SimRot = Quaternion.LookRotation(dir);
-        }
+        var inputMsg = new InputMsg();
+        inputMsg.X = (int)(dir.x * 1000);
+        inputMsg.Y = (int)(dir.z * 1000);
+        m_ClientSession.Send(inputMsg.Serialize());
     }
-    void OnGUI()
+    
+    private void UpdateByServer(FrameClientInputsMsg msg)
     {
-        if (GUI.Button(new Rect(10, 10, 100, 50), "Connect"))
+        foreach (var clientInput in msg.ClientInputs)
         {
-            m_ClientSession.Send(new byte[] { 0 });
-            m_HasClientConnected = true;
+            if(!m_LogicObjects.TryGetValue(clientInput.ClientKey, out var logicObject))
+            {
+                logicObject = new LogicObject();
+                m_LogicObjects.Add(clientInput.ClientKey, logicObject);
+            }
+            //update logic
+            var moveDir = new FixedVector3(clientInput.X, 0, clientInput.Y); //should normalize,
+            var deltaPos = moveDir * (6000 * LOGIC_FRAME_TIME / 1000);
+            logicObject.LogicPos += deltaPos;
+            if (moveDir.x != 0 && moveDir.z != 0)
+            {
+                logicObject.LogicFwd = moveDir;   
+            }
+            //Debug.Log(logicObject.LogicPos + ", " + logicObject.LogicFwd);
+            
+            //notify pres object
+            if(!m_PresObjects.TryGetValue(clientInput.ClientKey, out var presObject))
+            {
+                presObject = new PresObject();
+                presObject.ObjectTF = Instantiate(PreObjectTF, PreObjectTF.parent);
+                presObject.ObjectTF.gameObject.SetActive(true);
+                presObject.ObjectTF.position = logicObject.LogicPos.ToVector3();
+                presObject.ObjectTF.forward = logicObject.LogicFwd.ToVector3();
+                m_PresObjects.Add(clientInput.ClientKey, presObject);
+            }
+            presObject.StartPos = presObject.ObjectTF.position;
+            presObject.StartRot = presObject.ObjectTF.rotation;
+            presObject.TargetPos = logicObject.LogicPos.ToVector3();
+            presObject.TargetRot = Quaternion.LookRotation(logicObject.LogicFwd.ToVector3());
+            presObject.TotalTime = LOGIC_FRAME_TIME / 1000f;
+            presObject.SimTime = 0;
         }
     }
-    void OnApplicationQuit()
+    
+    private void OnApplicationQuit()
     {
         if (m_ClientSession != null)
         {

@@ -17,7 +17,7 @@ namespace Ping
             RandomUtils.SetSeed((int)(TimeUtils.GetTimeStamp() * 1000));
         }
 
-        protected override bool OnRun()
+        protected override bool OnRun(float curTimestamp)
         {
             if (m_UDPServer == null || m_UDPServer.IsClosed())
             {
